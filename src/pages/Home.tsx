@@ -1,14 +1,23 @@
 import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Alert } from 'react-native';
 
 import { Header } from '../components/Header';
-import { Task, TasksList } from '../components/TasksList';
+import { Task, TasksList, TaskEditArg } from '../components/TasksList';
 import { TodoInput } from '../components/TodoInput';
 
 export function Home() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  
+    function createExistingTaskAlert() {
+      Alert.alert('Tarefa já cadastrada', 'Você não pode cadastrar uma mesma tarefa múltiplas vezes')
+    }
 
   function handleAddTask(newTaskTitle: string) {
+    if (tasks.find(task => task.title.toLowerCase() === newTaskTitle.toLowerCase())) {
+      createExistingTaskAlert()
+      return
+    }
+    
     const newTask: Task = {
       id: Date.now(),
       title: newTaskTitle,
@@ -29,8 +38,35 @@ export function Home() {
     setTasks(updatedTasks)
   }
 
+  function handleEditTask({ id, newTaskTitle }: TaskEditArg) {
+    const updatedTasks = tasks.map(task => ({ ...task }))
+    const task = updatedTasks.find(task => task.id === id)
+
+    if (task) {
+      task.title = newTaskTitle
+    }
+
+    setTasks(updatedTasks)
+  }
+
+  function createConfirmRemoveAlert(id: number) {
+    Alert.alert(
+      'Remover tarefa',
+      'Tem certeza que você deseja remover esta tarefa?',
+      [
+        {
+          text: 'Não',
+          style: "cancel"
+        },
+        {
+          text: 'Sim',
+          onPress: () => setTasks(old => old.filter(task => task.id !== id))
+        }
+    ])
+  }
+
   function handleRemoveTask(id: number) {
-    setTasks(old => old.filter(task => task.id !== id))
+    createConfirmRemoveAlert(id)
   }
 
   return (
@@ -42,6 +78,7 @@ export function Home() {
       <TasksList 
         tasks={tasks} 
         toggleTaskDone={handleToggleTaskDone}
+        editTask={handleEditTask}
         removeTask={handleRemoveTask} 
       />
     </View>
